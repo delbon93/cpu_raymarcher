@@ -41,7 +41,7 @@ private:
      * @param ignore Pointer to an sdf_object that will not be considered in the raycast
      * @return Information about the completed raycast
      */
-    raycast_info raycast(const ray& r, sdf_object* ignore) const;
+    raycast_info raycast(const ray& r, sdf_object* ignore = nullptr, double min_travel = 0.0) const;
 
 private:
     camera cam = camera(vec3(), 2.0, 16.0 / 9.0, 1.0);

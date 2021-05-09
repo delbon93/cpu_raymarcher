@@ -28,7 +28,7 @@ public:
  */
 class global_light_source : public light_source {
 public:
-    global_light_source(vec3 _light_dir, double _intensity) : dir(_light_dir), intnsty(_intensity) {}
+    global_light_source(vec3 _light_dir, double _intensity) : dir(unit_vector(_light_dir)), intnsty(_intensity) {}
 
     vec3 light_dir(const point3& p) const override {
         return dir;
@@ -48,7 +48,8 @@ private:
  */
 class point_light_source : public light_source {
 public:
-    point_light_source(point3 _pos, double _intensity) : pos(_pos), intnsty(_intensity) {}
+    point_light_source(point3 _pos, double _intensity, double _dist_falloff = 0) : pos(_pos), intnsty(_intensity),
+        distance_falloff(_dist_falloff) {}
 
     inline double dist(const point3& p) { return (p - pos).length(); }
 
@@ -57,12 +58,14 @@ public:
     }
 
     double intensity(const point3& p) const override {
-        return intnsty;
+        double falloff = 1.0 + distance_falloff * (pos - p).length();
+        return intnsty * 1 / falloff;
     }
 
 private:
     point3 pos;
     double intnsty;
+    double distance_falloff;
 };
 
 #endif //RAYTRACING_IN_A_WEEKEND_LIGHT_H

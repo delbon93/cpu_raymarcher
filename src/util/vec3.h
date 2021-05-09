@@ -15,6 +15,13 @@ public:
      * Creates zero-vector
      */
     vec3() : e{0, 0, 0} {}
+
+    /**
+     * Creates vector with all components set to the same value
+     * @param e0 Value of all components
+     */
+    vec3(double e0) : e{e0, e0, e0} {}
+
     /**
      * Creates vector with given components
      * @param e0 First component
@@ -142,6 +149,17 @@ inline vec3 cross(const vec3 &u, const vec3 &v) {
  */
 inline vec3 unit_vector(vec3 v) {
     return v / v.length();
+}
+
+/**
+ * Returns a unit vector constructed from given vector components
+ * @param e0 First component
+ * @param e1 Second component
+ * @param e2 Third component
+ * @return Unit vector
+ */
+inline vec3 unit_vector(double e0, double e1, double e2) {
+    return unit_vector(vec3(e0, e1, e2));
 }
 
 #endif //RAYTRACING_IN_A_WEEKEND_VEC3_H

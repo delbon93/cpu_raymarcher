@@ -11,7 +11,7 @@
  */
 class sdf_object {
 public:
-    sdf_object() : diffuse_color(color(1, 1, 1)) {}
+    sdf_object() : diffuse_color(color(1, 1, 1)), position(vec3()) {}
 
     /**
      * Calculates the signed distance from a given point in world space to the object.
@@ -25,6 +25,8 @@ public:
     /**
      * Calculates the normal unit vector of the object's surface for a given point. This point does
      * not necessarily have to be on the surface exactly.
+     * This default implementation approximates the normal as the gradient of the signed distance field. Specific,
+     * more performant or accurate implementations for specific shapes can be provided by overriding this function.
      * @param p Point in world space
      * @return Unit vector that points from the object's surface to p or into the normal direction of the
      * surface if p is on the object's surface
@@ -42,10 +44,16 @@ public:
         return unit_vector(vec3(x2 - x1, y2 - y1, z2 - z1));
     }
 
+    virtual vec3 get_pos() const { return position; }
+    void set_pos(point3 p) { position = p; }
+    virtual color get_diffuse_color(point3& p) const { return diffuse_color; }
+    void set_diffuse_color(color c) { diffuse_color = c; }
+
     virtual ~sdf_object() {}
 
-public:
+private:
     color diffuse_color;
+    point3 position;
 
 private:
     static constexpr double NORMAL_STEP = 0.0008;
@@ -87,6 +95,10 @@ public:
         return obj->sdf(p) - padding;
     }
 
+    vec3 get_pos() const override {
+        return obj->get_pos();
+    }
+
     ~sdf_padded() {
         delete obj;
     }
@@ -95,61 +107,79 @@ private:
     double padding;
 };
 
-class sdf_diff : public sdf_object {
+class sdf_composite : public sdf_object {
 public:
-    sdf_diff(sdf_object* _o1, sdf_object* _o2) : o1(_o1), o2(_o2) { }
-
-    double sdf(const vec3& p) const override {
-        return max(o1->sdf(p), -(o2->sdf(p)));
+    sdf_composite(point3 _position, sdf_object* _o1, sdf_object* _o2) : o1(_o1), o2(_o2) {
+        set_pos(_position);
     }
 
-    ~sdf_diff() {
+    color get_diffuse_color(point3& p) const override {
+        if (o1->sdf(p-get_pos()) < o2->sdf(p-get_pos())) return o1->get_diffuse_color(p);
+        else return o2->get_diffuse_color(p);
+    }
+
+    ~sdf_composite() {
         delete o1;
         delete o2;
     }
-private:
+
+protected:
     sdf_object *o1, *o2;
 };
 
-class sdf_union : public sdf_object {
+class sdf_diff : public sdf_composite {
 public:
-    sdf_union(sdf_object* _o1, sdf_object* _o2) : o1(_o1), o2(_o2) { }
+    sdf_diff(const point3 &position, sdf_object *o1, sdf_object *o2) : sdf_composite(position, o1, o2) {}
 
     double sdf(const vec3& p) const override {
-        return min(o1->sdf(p), o2->sdf(p));
+        return max(o1->sdf(p-get_pos()), -(o2->sdf(p-get_pos())));
     }
+};
 
-    ~sdf_union() {
-        delete o1;
-        delete o2;
+class sdf_union : public sdf_composite {
+public:
+    sdf_union(const point3 &position, sdf_object *o1, sdf_object *o2) : sdf_composite(position, o1, o2) {}
+
+    double sdf(const vec3& p) const override {
+        return min(o1->sdf(p-get_pos()), o2->sdf(p-get_pos()));
     }
-private:
-    sdf_object *o1, *o2;
+};
+
+class sdf_intersect : public sdf_composite {
+public:
+    sdf_intersect(const point3 &position, sdf_object *o1, sdf_object *o2) : sdf_composite(position, o1, o2) {}
+
+    double sdf(const vec3& p) const override {
+        return max(o1->sdf(p-get_pos()), o2->sdf(p-get_pos()));
+    }
 };
 
 class sdf_sphere : public sdf_object {
 public:
-    sdf_sphere(vec3 _pos, double _radius) : pos(_pos), radius(_radius) {}
+    sdf_sphere(vec3 _pos, double _radius) : radius(_radius) {
+        set_pos(_pos);
+    }
 
     double sdf(const vec3& p) const override {
-        return (p - pos).length() - radius;
+        return (p - get_pos()).length() - radius;
     }
 
     vec3 normal(const vec3& p) const override {
-        return unit_vector(p - pos);
+        return unit_vector(p - get_pos());
     }
 
 private:
-    vec3 pos;
     double radius;
 };
 
 class sdf_cylinder : public sdf_object {
 public:
-    sdf_cylinder(vec3 _pos, double _height, double _radius) : pos(_pos), height(_height), radius(_radius) {}
+    sdf_cylinder(vec3 _pos, double _height, double _radius) : height(_height), radius(_radius) {
+        set_pos(_pos);
+    }
 
     double sdf(const vec3& p) const override {
-        vec3 q = p - pos;
+        vec3 q = p - get_pos();
 
         double dxz = max(0.0, sqrt(q.x() * q.x() + q.z() * q.z()) - radius);
         double dy = max(0.0, abs(q.y()) - height / 2);
@@ -158,31 +188,59 @@ public:
     }
 
     vec3 normal(const vec3& p) const override {
-        if (p.y() > (pos.y() + height / 2)) return vec3(0, 1, 0);
-        if (p.y() < (pos.y() - height / 2)) return vec3(0, -1, 0);
-        return unit_vector(vec3(p.x() - pos.x(), 0, p.z() - pos.z()));
+        if (p.y() > (get_pos().y() + height / 2)) return vec3(0, 1, 0);
+        if (p.y() < (get_pos().y() - height / 2)) return vec3(0, -1, 0);
+        return unit_vector(vec3(p.x() - get_pos().x(), 0, p.z() - get_pos().z()));
     }
 
 private:
-    vec3 pos;
     double height;
+    double radius;
+};
+
+class sdf_capsule : public sdf_object {
+public:
+    sdf_capsule(vec3 _p1, vec3 _p2, double _radius) : p2(_p2), radius(_radius) {
+        set_pos(_p1);
+        length = (_p2 - _p1).length();
+        v = unit_vector(_p2 - _p1);
+    }
+
+    sdf_capsule(vec3 _p, vec3 _dir, double _length, double _radius) : p2(_p+_dir*_length),
+        length(_length), v(_dir), radius(_radius) {
+        set_pos(_p);
+    }
+
+    double sdf(const vec3 &p) const override {
+        double lambda = clamp(dot(p - get_pos(), v), 0.0, length);
+        return ((get_pos() + lambda * v) - p).length() - radius;
+    }
+
+    vec3 normal(const vec3 &p) const override {
+        double lambda = clamp(dot(p - get_pos(), v), 0.0, length);
+        return unit_vector(p - (get_pos() + lambda * v));
+    }
+
+private:
+    vec3 p2;
+    vec3 v;
+    double length;
     double radius;
 };
 
 class sdf_ground_plane : public sdf_object {
 public:
-    explicit sdf_ground_plane(double _height) : height(_height) {}
+    explicit sdf_ground_plane(double _height) {
+        set_pos(vec3(0, _height, 0));
+    }
 
     double sdf(const vec3& p) const override {
-        return (p.y() - height);
+        return (p.y() - get_pos().y());
     }
 
     vec3 normal(const vec3& p) const override {
         return vec3(0, 1, 0);
     }
-
-private:
-    double height;
 };
 
 #endif //RAYTRACING_IN_A_WEEKEND_OBJECTS_H
