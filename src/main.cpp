@@ -5,7 +5,7 @@
 #include <chrono>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/std_image_write.h"
+#include "stb/std_image_write.hpp"
 
 #define IMG_WIDTH(_var_w, _var_h, aspect_ratio, width) const int _var_w = (width); const int _var_h = static_cast<int>(_var_w / (aspect_ratio));
 #define IMG_HEIGHT(_var_w, _var_h, aspect_ratio, height) const int _var_h = (height); const int _var_w = static_cast<int>(_var_h * (aspect_ratio));
