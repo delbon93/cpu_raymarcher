@@ -34,6 +34,10 @@ public:
         }
     }
 
+    ~renderer() {
+        delete shader;
+    }
+
 private:
     /**
      * Shorthand function to write a single 24-bit RGB pixel into a buffer
@@ -51,10 +55,6 @@ private:
         img_data[index + 2] = b;
     }
 
-
-    ~renderer() {
-        delete shader;
-    }
 private:
     frag_shader* shader;
 
