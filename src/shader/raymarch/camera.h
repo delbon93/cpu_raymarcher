@@ -8,8 +8,18 @@
 #include "../../util/vec3.h"
 #include "ray.h"
 
+/**
+ * A camera that exists in world space. Provides rays for given UV viewport coordinates
+ */
 class camera {
 public:
+    /**
+     * Creates a camera
+     * @param _origin The origin point of the camera in world space
+     * @param _viewport_height Height of the viewport in world units
+     * @param aspect_ratio Aspect ratio of the viewport
+     * @param _focal_length Distance of the viewport from the cameras origin into negative z direction
+     */
     camera(const point3& _origin, const double _viewport_height, const double aspect_ratio,
            const double _focal_length)
         : origin(_origin), viewport_height(_viewport_height), focal_length(_focal_length) {
@@ -19,6 +29,12 @@ public:
         lower_left_corner = origin - horizontal / 2 - vertical / 2 - vec3(0, 0, focal_length);
     }
 
+    /**
+     * Creates a ray from the given viewport UV coordinate into the scene
+     * @param uv UV viewport coordinate
+     * @param normalized Whether or not the ray's direction vector should be normalized
+     * @return The created ray
+     */
     ray get_ray(const vec3& uv, bool normalized) const {
         double origin_height = viewport_height * 0.7;
         double origin_width = origin_height * viewport_width / viewport_height;

@@ -6,11 +6,29 @@
 #include "../../util/math.h"
 #include "light.h"
 
+/**
+ * Abstract generic 'signed distance function'-object.
+ */
 class sdf_object {
 public:
     sdf_object() : diffuse_color(color(1, 1, 1)) {}
 
+    /**
+     * Calculates the signed distance from a given point in world space to the object.
+     * Evaluates to exactly 0 at the objects surfaces, and positive distances to the closest
+     * point on the surface elsewhere
+     * @param p Point in world space
+     * @return Shortest distance from that point to the object's surface
+     */
     virtual double sdf(const vec3& p) const = 0;
+
+    /**
+     * Calculates the normal unit vector of the object's surface for a given point. This point does
+     * not necessarily have to be on the surface exactly.
+     * @param p Point in world space
+     * @return Unit vector that points from the object's surface to p or into the normal direction of the
+     * surface if p is on the object's surface
+     */
     virtual vec3 normal(const vec3& p) const {
         static vec3 DX(NORMAL_STEP, 0, 0);
         static vec3 DY(0, NORMAL_STEP, 0);
@@ -33,6 +51,9 @@ private:
     static constexpr double NORMAL_STEP = 0.0008;
 };
 
+/**
+ * Container object for sdf objects and light sources
+ */
 class scene {
 public:
     scene& operator+=(sdf_object* obj) {
@@ -53,6 +74,10 @@ public:
     std::vector<sdf_object*> objects;
     std::vector<light_source*> light_sources;
 };
+
+/************************
+ *   SDF Object Types   *
+ ************************/
 
 class sdf_padded : public sdf_object {
 public:
