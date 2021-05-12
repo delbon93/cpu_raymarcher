@@ -11,7 +11,7 @@
 #define IMG_HEIGHT(_var_w, _var_h, aspect_ratio, height) const int _var_h = (height); const int _var_w = static_cast<int>(_var_h * (aspect_ratio));
 
 #include "util/vec3.h"
-#include "shader/ray_march_test_shader.h"
+#include "shader/ray_march_edge_detection_shader.h"
 #include "render/renderer.h"
 #include "shader/raymarch/scene.h"
 
@@ -39,9 +39,9 @@ void init_scene(scene& scn) {
 //    small_ball->set_diffuse_color(color(0.1, 0.3, 0.8));
 //    scn += small_ball;
 
-    auto ground = new sdf_ground_plane(-1.0);
-    ground->set_diffuse_color(color(0.15, 0.75, 0.3));
-    scn += ground;
+//    auto ground = new sdf_ground_plane(-1.0);
+//    ground->set_diffuse_color(color(0.15, 0.75, 0.3));
+//    scn += ground;
 
     auto cylinder = new sdf_cylinder(vec3(-2, -0.7, -4), 0.6, 0.2);
     cylinder->set_diffuse_color(color(0.7, 0.65, 0.3));
@@ -65,7 +65,7 @@ int main() {
     // Render thread function
     auto scn = scene();
     init_scene(scn);
-    auto shader = new ray_march_test_shader(scn);
+    auto shader = new ray_march_edge_detection_shader(scn);
 
     auto render_job = [](frag_shader* shader, unsigned char* img_data, int start_index, int end_index) {
         return [shader, img_data, start_index, end_index]() {
