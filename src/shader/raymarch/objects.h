@@ -59,29 +59,7 @@ private:
     static constexpr double NORMAL_STEP = 0.0008;
 };
 
-/**
- * Container object for sdf objects and light sources
- */
-class scene {
-public:
-    scene& operator+=(sdf_object* obj) {
-        objects.push_back(obj);
-        return *this;
-    }
 
-    scene& operator+=(light_source* obj) {
-        light_sources.push_back(obj);
-        return *this;
-    }
-
-    ~scene() {
-        for(auto obj : objects) delete obj;
-        for(auto lsrc : light_sources) delete lsrc;
-    }
-public:
-    std::vector<sdf_object*> objects;
-    std::vector<light_source*> light_sources;
-};
 
 /************************
  *   SDF Object Types   *

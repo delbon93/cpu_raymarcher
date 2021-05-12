@@ -9,12 +9,9 @@
  * given shader type's fragment function
  * @tparam shader_type Used shader type
  */
-template<class shader_type>
 class renderer {
 public:
-    renderer() {
-        shader = new shader_type();
-    }
+    explicit renderer(frag_shader* _shader) : shader(_shader) { }
 
     /**
      * Renders pixel data into a 24-bit RGB buffer
@@ -32,10 +29,6 @@ public:
             write_color(target_data, pixel_index * 3, shader->frag(vec3(ux, uy, 0)));
             pixel_index++;
         }
-    }
-
-    ~renderer() {
-        delete shader;
     }
 
 private:

@@ -3,7 +3,7 @@
 
 #include "frag_shader.h"
 #include "raymarch/camera.h"
-#include "raymarch/objects.h"
+#include "raymarch/scene.h"
 
 /**
  * Information about a completed raycast:
@@ -31,19 +31,24 @@ struct raycast_info {
  */
 class ray_march_shader : public frag_shader {
 public:
-    ray_march_shader();
+    ray_march_shader(const scene& _scn) : scn(_scn) {}
     color frag(const vec3 &uv) override;
 
-private:
+protected:
+    virtual void frag_ray(raycast_info r_info, color& out_col) = 0;
     /**
      * Performs a raycast to probe information about the scene
      * @param r Ray to be cast
      * @param ignore Pointer to an sdf_object that will not be considered in the raycast
      * @return Information about the completed raycast
      */
-    raycast_info raycast(const ray& r, sdf_object* ignore = nullptr, double min_travel = 0.0) const;
+    raycast_info raycast(const ray& r, double distance_threshold, sdf_object* ignore = nullptr, double min_travel = 0.0) const;
 
-private:
+protected:
+    static constexpr double MAX_DIST = 30;
+    static constexpr double MIN_STEP = 0.0001;
+    double distThreshold = 0.00005;
+
     camera cam = camera(vec3(), 2.0, 16.0 / 9.0, 1.0);
     scene scn;
 };
