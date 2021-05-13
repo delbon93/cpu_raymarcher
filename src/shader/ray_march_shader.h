@@ -24,6 +24,11 @@ struct raycast_info {
      * The distance from 'hitpoint' to the closest sdf_object at that location
      */
     double min_dist {};
+
+    /**
+     * The distance travelled by the ray before colliding or going out of range
+     */
+    double travel {};
 };
 
 /**

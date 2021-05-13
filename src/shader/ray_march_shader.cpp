@@ -4,6 +4,7 @@ raycast_info ray_march_shader::raycast(const ray& r, double distance_threshold, 
     raycast_info info {r.at(MAX_DIST), nullptr, MAX_DIST};
     double t = min_travel;
     while (t < MAX_DIST) {
+        info.travel = t;
         double local_min_dist = MAX_DIST;
         vec3 p = r.at(t);
         for(auto obj : scn.objects) {
@@ -21,6 +22,7 @@ raycast_info ray_march_shader::raycast(const ray& r, double distance_threshold, 
         }
         t += max(MIN_STEP, local_min_dist);
     }
+    info.travel = MAX_DIST;
     return info;
 }
 
